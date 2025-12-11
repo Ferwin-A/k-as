@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Energía Solar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <style>
+        /* El brillo para el estado ON ahora es verde esmeralda vibrante */
+        .glow-on { 
+            box-shadow: 0 0 20px #10b981; 
+            border-color: #10b981; 
+        }
+        /* Panel de 'Solar-Glass' - Ligeramente más claro, con fondo verde oscuro */
+        .glass-panel {
+            background: rgba(16, 185, 129, 0.15); /* Verde esmeralda con transparencia */
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen font-sans bg-[url('https://images.unsplash.com/photo-1547794042-7a716766487e?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center bg-fixed">
+    
+    <div class="fixed inset-0 bg-white/60 pointer-events-none"></div>
+
+    <div class="relative z-10 max-w-md mx-auto p-4 min-h-screen flex flex-col">
+        
+        <header class="flex justify-between items-center py-6">
+            <div>
+                <h1 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-lime-500">
+                    SolarFlow Control
+                </h1>
+                <p class="text-xs text-gray-600">Sistema IoT de Energía Orgánica</p>
+            </div>
+            <button onclick="openConfig()" class="p-2 rounded-full bg-white/70 hover:bg-white/90 transition border border-gray-300 shadow-md">
+                <i data-lucide="settings" class="w-5 h-5 text-emerald-600"></i>
+            </button>
+        </header>
+
+        <div id="statusIndicator" class="mb-8 flex items-center gap-3 bg-red-100 border border-red-300 p-3 rounded-lg shadow-inner">
+            <span class="relative flex h-3 w-3">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+            </span>
+            <span class="text-sm font-medium text-red-700">Desconectado de la Nube</span>
+        </div>
+
+        <main class="space-y-6 flex-grow">
+            
+            <div class="glass-panel p-6 rounded-2xl transition-all duration-300" id="card1">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-800">Iluminación Sala</h2>
+                        <span class="text-xs text-gray-500 font-mono">/casa/sala</span>
+                    </div>
+                    <i data-lucide="sun" id="icon1" class="w-8 h-8 text-gray-500 transition-colors duration-300"></i>
+                </div>
+                
+                <div class="flex gap-3">
+                    <button onclick="updateState('sala', true)" class="flex-1 bg-gradient-to-r from-emerald-500 to-lime-500 hover:from-emerald-400 hover:to-lime-400 text-white font-bold py-3 rounded-xl shadow-lg transform active:scale-95 transition">
+                        ACTIVAR
+                    </button>
+                    <button onclick="updateState('sala', false)" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 rounded-xl shadow-lg transform active:scale-95 transition">
+                        APAGAR
+                    </button>
+                </div>
+            </div>
+
+            <div class="glass-panel p-6 rounded-2xl transition-all duration-300" id="card2">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-800">Bomba de Agua</h2>
+                        <span class="text-xs text-gray-500 font-mono">/casa/laboratorio</span>
+                    </div>
+                    <i data-lucide="droplets" id="icon2" class="w-8 h-8 text-gray-500 transition-colors duration-300"></i>
+                </div>
+                
+                <div class="flex gap-3">
+                    <button onclick="updateState('laboratorio', true)" class="flex-1 bg-gradient-to-r from-emerald-500 to-lime-500 hover:from-emerald-400 hover:to-lime-400 text-white font-bold py-3 rounded-xl shadow-lg transform active:scale-95 transition">
+                        ACTIVAR
+                    </button>
+                    <button onclick="updateState('laboratorio', false)" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 rounded-xl shadow-lg transform active:scale-95 transition">
+                        APAGAR
+                    </button>
+                </div>
+            </div>
+
+        </main>
+
+        <footer class="mt-8 text-center text-xs text-gray-500 font-mono">
+            IST Vida Nueva - SolarFlow Research
+        </footer>
+    </div>
+
+    <div id="configModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/70 backdrop-blur-sm hidden">
+        <div class="bg-white border border-gray-300 p-6 rounded-2xl w-11/12 max-w-md shadow-2xl">
+            <h3 class="text-xl font-bold mb-4 flex items-center gap-2 text-emerald-600">
+                <i data-lucide="database" class="w-5 h-5 text-emerald-500"></i>
+                Configuración Firebase
+            </h3>
+            <p class="text-sm text-gray-600 mb-4">Ingresa las credenciales de tu proyecto Firebase Realtime Database.</p>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">API KEY</label>
+                    <input type="text" id="apiKeyInput" placeholder="AIzaSy..." class="w-full bg-gray-100 border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none text-gray-800">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">DATABASE URL</label>
+                    <input type="text" id="dbUrlInput" placeholder="https://proyecto.firebaseio.com" class="w-full bg-gray-100 border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none text-gray-800">
+                </div>
+            </div>
+
+            <div class="mt-6 flex gap-3">
+                <button onclick="closeConfig()" class="flex-1 py-3 text-gray-600 hover:text-gray-900 transition">Cancelar</button>
+                <button onclick="saveConfig()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl">Guardar y Conectar</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        let app, db;
+
+        // Exponer funciones al scope global para los botones HTML
+        window.openConfig = () => document.getElementById('configModal').classList.remove('hidden');
+        window.closeConfig = () => document.getElementById('configModal').classList.add('hidden');
+        
+        window.saveConfig = () => {
+            const apiKey = document.getElementById('apiKeyInput').value.trim();
+            const dbUrl = document.getElementById('dbUrlInput').value.trim();
+            
+            if(!apiKey || !dbUrl) return Swal.fire('Error', 'Faltan datos', 'error');
+
+            localStorage.setItem('iot_api_key', apiKey);
+            localStorage.setItem('iot_db_url', dbUrl);
+            
+            initFirebase(apiKey, dbUrl);
+            closeConfig();
+        };
+
+        window.updateState = (foco, estado) => {
+            if(!db) return Swal.fire('Error', 'Configura Firebase primero', 'warning');
+            
+            // Escribir en la base de datos (/casa/sala o /casa/laboratorio)
+            set(ref(db, 'casa/' + foco), estado)
+                .then(() => {
+                    // Feedback háptico opcional
+                    if(navigator.vibrate) navigator.vibrate(50);
+                })
+                .catch((error) => Swal.fire('Error', error.message, 'error'));
+        };
+
+        function initFirebase(apiKey, databaseURL) {
+            try {
+                const firebaseConfig = { apiKey, databaseURL };
+                app = initializeApp(firebaseConfig);
+                db = getDatabase(app);
+
+                // Escuchar cambios en tiempo real
+                const casaRef = ref(db, 'casa');
+                
+                onValue(casaRef, (snapshot) => {
+                    updateStatusUI(true);
+                    const data = snapshot.val();
+                    if(data) {
+                        updateFocoUI('sala', data.sala, 'card1', 'icon1');
+                        updateFocoUI('laboratorio', data.laboratorio, 'card2', 'icon2');
+                    }
+                }, (error) => {
+                    console.error(error);
+                    updateStatusUI(false);
+                });
+
+            } catch (e) {
+                console.error(e);
+                Swal.fire('Error', 'Credenciales inválidas', 'error');
+            }
+        }
+
+        // Se han actualizado las clases de Tailwind aquí para el nuevo esquema de color (verde/lima)
+        function updateFocoUI(name, state, cardId, iconId) {
+            const card = document.getElementById(cardId);
+            const icon = document.getElementById(iconId);
+            
+            // Reemplazo de color de amarillo a verde/lima
+            const onColor = 'text-lime-500';
+            const offColor = 'text-gray-500';
+
+            if(state) {
+                // Estado ON: Brillo verde, texto verde
+                card.classList.add('glow-on');
+                card.classList.replace('border-gray-300', 'border-lime-500'); // Reemplaza un posible border-gray-300
+                icon.classList.add(onColor, 'fill-current');
+                icon.classList.remove(offColor);
+                icon.classList.add('text-lime-500'); // Nuevo color para ON
+            } else {
+                // Estado OFF: Sin brillo, texto gris
+                card.classList.remove('glow-on');
+                card.classList.replace('border-lime-500', 'border-gray-300'); // Reemplazo inverso
+                icon.classList.remove(onColor, 'fill-current');
+                icon.classList.add(offColor);
+                icon.classList.remove('text-lime-500');
+                icon.classList.add('text-gray-500'); // Nuevo color para OFF
+            }
+        }
+
+        // Se han actualizado las clases de Tailwind aquí para el nuevo esquema de color (verde/lima)
+        function updateStatusUI(connected) {
+            const el = document.getElementById('statusIndicator');
+            if(connected) {
+                // Conectado: Verde esmeralda
+                el.className = "mb-8 flex items-center gap-3 bg-emerald-100 border border-emerald-300 p-3 rounded-lg shadow-inner transition-all";
+                el.innerHTML = `
+                    <span class="relative flex h-3 w-3">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                    </span>
+                    <span class="text-sm font-medium text-emerald-700">Conectado a Firebase</span>
+                `;
+            } else {
+                // Desconectado: Rojo (se mantiene para errores)
+                el.className = "mb-8 flex items-center gap-3 bg-red-100 border border-red-300 p-3 rounded-lg shadow-inner transition-all";
+                el.innerHTML = `<span class="h-3 w-3 rounded-full bg-red-500"></span><span class="text-sm font-medium text-red-700">Desconectado</span>`;
+            }
+        }
+
+        // Cargar config guardada al inicio
+        lucide.createIcons();
+        const savedKey = localStorage.getItem('iot_api_key');
+        const savedUrl = localStorage.getItem('iot_db_url');
+        
+        if(savedKey && savedUrl) {
+             document.getElementById('apiKeyInput').value = savedKey;
+             document.getElementById('dbUrlInput').value = savedUrl;
+            initFirebase(savedKey, savedUrl);
+        } else {
+            setTimeout(openConfig, 1000); // Abrir config si no hay datos
+        }
+
+    </script>
+</body>
+</html>
